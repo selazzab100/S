@@ -58,7 +58,7 @@ get_header();
         <div class="callout">
             <p class="lang-fr">Obtenez une vision financière claire et des recommandations personnalisées pour maximiser votre valeur.</p>
             <p class="lang-en">Gain a clear financial view and tailored recommendations to maximize your value.</p>
-            <?php synergia_cta_button( __( 'Échanger avec un expert', 'synergia' ), __( 'Talk to an expert', 'synergia' ), home_url( '/contact' ) ); ?>
+            <?php synergia_cta_button( __( 'Échanger avec un expert', 'synergia' ), __( 'Talk to an expert', 'synergia' ), synergia_indexed_url( 'contact' ) ); ?>
         </div>
     </div>
 </section>

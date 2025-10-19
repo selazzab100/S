@@ -9,6 +9,25 @@ define( 'SYNERGIA_THEME_DIR', get_template_directory() );
 
 define( 'SYNERGIA_THEME_URI', get_template_directory_uri() );
 
+/**
+ * Generate URLs that explicitly include index.php for environments without pretty permalinks.
+ *
+ * @param string $path Optional relative path.
+ *
+ * @return string
+ */
+function synergia_indexed_url( $path = '' ) {
+    $path = trim( $path );
+
+    if ( '' === $path ) {
+        return home_url( '/' );
+    }
+
+    $path = trim( $path, '/' );
+
+    return trailingslashit( home_url( 'index.php/' . $path ) );
+}
+
 add_action( 'after_setup_theme', function () {
     add_theme_support( 'title-tag' );
     add_theme_support( 'post-thumbnails' );

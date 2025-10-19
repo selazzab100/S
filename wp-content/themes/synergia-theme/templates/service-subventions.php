@@ -58,7 +58,7 @@ get_header();
         <div class="callout">
             <p class="lang-fr">Simplifiez l’accès aux subventions et concentrez-vous sur l’exécution de vos projets.</p>
             <p class="lang-en">Simplify grant access and stay focused on executing your projects.</p>
-            <?php synergia_cta_button( __( 'Identifier mes aides', 'synergia' ), __( 'Identify my incentives', 'synergia' ), home_url( '/contact' ) ); ?>
+            <?php synergia_cta_button( __( 'Identifier mes aides', 'synergia' ), __( 'Identify my incentives', 'synergia' ), synergia_indexed_url( 'contact' ) ); ?>
         </div>
     </div>
 </section>

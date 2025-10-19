@@ -60,7 +60,7 @@ get_header();
         <div class="callout">
             <p class="lang-fr">Abordez votre levée avec sérénité grâce à un accompagnement complet.</p>
             <p class="lang-en">Approach your fundraising with confidence through comprehensive support.</p>
-            <?php synergia_cta_button( __( 'Planifier une session', 'synergia' ), __( 'Schedule a session', 'synergia' ), home_url( '/contact' ) ); ?>
+            <?php synergia_cta_button( __( 'Planifier une session', 'synergia' ), __( 'Schedule a session', 'synergia' ), synergia_indexed_url( 'contact' ) ); ?>
         </div>
     </div>
 </section>

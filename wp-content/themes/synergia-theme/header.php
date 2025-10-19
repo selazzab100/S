@@ -9,10 +9,13 @@
 <header class="site-header">
     <div class="container top-bar">
         <a class="site-title" href="<?php echo esc_url( home_url( '/' ) ); ?>">
-            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/img/synergia-logo.svg' ); ?>" alt="Synergia" width="120" height="32">
+            <img src="<?php echo esc_url( get_template_directory_uri() . '/assets/img/logo1.png' ); ?>" alt="Synergia" width="140" height="40">
             <span>Synergia</span>
         </a>
-        <button class="nav-toggle" aria-label="<?php esc_attr_e( 'Menu', 'synergia' ); ?>">☰</button>
+        <button class="nav-toggle" aria-expanded="false" aria-controls="primary-navigation" data-open-label="<?php esc_attr_e( 'Menu', 'synergia' ); ?>" data-close-label="<?php echo esc_attr__( 'Fermer / Close', 'synergia' ); ?>">
+            <span class="nav-toggle-icon" aria-hidden="true">☰</span>
+            <span class="nav-toggle-label"><?php esc_html_e( 'Menu', 'synergia' ); ?></span>
+        </button>
         <div class="language-switcher header-language" aria-label="Choisir la langue / Choose language">
             <button type="button" data-lang="fr" class="active">FR</button>
             <button type="button" data-lang="en">EN</button>
@@ -22,10 +25,12 @@
             'theme_location' => 'primary',
             'container'      => 'nav',
             'container_class'=> 'primary-navigation',
+            'container_id'   => 'primary-navigation',
             'menu_class'     => 'menu',
             'fallback_cb'    => 'wp_page_menu',
         ] );
         ?>
     </div>
+    <div class="menu-overlay" aria-hidden="true" hidden></div>
 </header>
 <main class="site-main">

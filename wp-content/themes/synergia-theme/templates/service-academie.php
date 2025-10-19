@@ -56,7 +56,7 @@ get_header();
         <div class="callout">
             <p class="lang-fr">Déployez des formations immédiatement actionnables pour accélérer vos talents.</p>
             <p class="lang-en">Deliver actionable learning experiences to accelerate your talent.</p>
-            <?php synergia_cta_button( __( 'Construire un programme', 'synergia' ), __( 'Build a program', 'synergia' ), home_url( '/contact' ) ); ?>
+            <?php synergia_cta_button( __( 'Construire un programme', 'synergia' ), __( 'Build a program', 'synergia' ), synergia_indexed_url( 'contact' ) ); ?>
         </div>
     </div>
 </section>
