@@ -2,12 +2,130 @@
     const body = document.body;
     const navToggle = document.querySelector('.nav-toggle');
     const primaryNav = document.querySelector('.primary-navigation');
+    const navToggleLabel = navToggle ? navToggle.querySelector('.nav-toggle-label') : null;
+    const navToggleOpenLabel = navToggle ? navToggle.getAttribute('data-open-label') : '';
+    const navToggleCloseLabel = navToggle ? navToggle.getAttribute('data-close-label') : '';
+    const navToggleIcon = navToggle ? navToggle.querySelector('.nav-toggle-icon') : null;
+    const menuOverlay = document.querySelector('.menu-overlay');
     const langButtons = document.querySelectorAll('.language-switcher button');
     const counters = document.querySelectorAll('.counter-value');
 
+    const setNavigationTabState = (isDisabled) => {
+        if (!primaryNav) {
+            return;
+        }
+
+        const focusable = primaryNav.querySelectorAll('a, button');
+        focusable.forEach((element) => {
+            if (isDisabled) {
+                element.setAttribute('tabindex', '-1');
+            } else {
+                element.removeAttribute('tabindex');
+            }
+        });
+    };
+
+    if (primaryNav) {
+        primaryNav.setAttribute('aria-hidden', 'true');
+        setNavigationTabState(true);
+    }
+
+    if (body) {
+        body.classList.add('js-enabled');
+    }
+
+    const closeNavigation = () => {
+        if (!primaryNav || !navToggle) {
+            return;
+        }
+
+        primaryNav.classList.remove('is-open');
+        navToggle.setAttribute('aria-expanded', 'false');
+        primaryNav.setAttribute('aria-hidden', 'true');
+        setNavigationTabState(true);
+
+        if (navToggleLabel) {
+            navToggleLabel.textContent = navToggleOpenLabel || navToggleLabel.textContent;
+        }
+
+        if (navToggleIcon) {
+            navToggleIcon.textContent = '☰';
+        }
+
+        if (menuOverlay) {
+            menuOverlay.classList.remove('is-visible');
+            menuOverlay.setAttribute('hidden', '');
+        }
+
+        body && body.classList.remove('nav-open');
+    };
+
+    const openNavigation = () => {
+        if (!primaryNav || !navToggle) {
+            return;
+        }
+
+        primaryNav.classList.add('is-open');
+        navToggle.setAttribute('aria-expanded', 'true');
+        primaryNav.setAttribute('aria-hidden', 'false');
+        setNavigationTabState(false);
+
+        if (navToggleLabel) {
+            navToggleLabel.textContent = navToggleCloseLabel || navToggleLabel.textContent;
+        }
+
+        if (navToggleIcon) {
+            navToggleIcon.textContent = '✕';
+        }
+
+        if (menuOverlay) {
+            menuOverlay.classList.add('is-visible');
+            menuOverlay.removeAttribute('hidden');
+        }
+
+        body && body.classList.add('nav-open');
+
+        const firstLink = primaryNav.querySelector('a');
+        if (firstLink) {
+            firstLink.focus();
+        }
+    };
+
     if (navToggle && primaryNav) {
         navToggle.addEventListener('click', () => {
-            primaryNav.classList.toggle('open');
+            if (primaryNav.classList.contains('is-open')) {
+                closeNavigation();
+            } else {
+                openNavigation();
+            }
+        });
+
+        if (menuOverlay) {
+            menuOverlay.addEventListener('click', closeNavigation);
+        }
+
+        primaryNav.addEventListener('click', (event) => {
+            if (event.target instanceof HTMLElement && event.target.tagName === 'A') {
+                closeNavigation();
+            }
+        });
+
+        window.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && primaryNav.classList.contains('is-open')) {
+                event.preventDefault();
+                closeNavigation();
+                navToggle.focus();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            if (!primaryNav.classList.contains('is-open')) {
+                return;
+            }
+
+            if (window.innerWidth >= 1200) {
+                closeNavigation();
+            }
         });
     }
 

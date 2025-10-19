@@ -60,7 +60,7 @@ get_header();
         <div class="callout">
             <p class="lang-fr">Nous alignons stratégie et opérations pour générer une croissance mesurable. Parlons de vos ambitions.</p>
             <p class="lang-en">We align strategy and operations to deliver measurable growth. Let’s talk about your ambitions.</p>
-            <?php synergia_cta_button( __( 'Contactez-nous', 'synergia' ), __( 'Contact us', 'synergia' ), home_url( '/contact' ) ); ?>
+            <?php synergia_cta_button( __( 'Contactez-nous', 'synergia' ), __( 'Contact us', 'synergia' ), synergia_indexed_url( 'contact' ) ); ?>
         </div>
     </div>
 </section>

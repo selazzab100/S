@@ -58,7 +58,7 @@ get_header();
         <div class="callout">
             <p class="lang-fr">Réduisez les incertitudes et maximisez la valeur de vos transactions avec Synergia.</p>
             <p class="lang-en">Reduce uncertainty and maximize transaction value with Synergia.</p>
-            <?php synergia_cta_button( __( 'Parlons transaction', 'synergia' ), __( 'Discuss your deal', 'synergia' ), home_url( '/contact' ) ); ?>
+            <?php synergia_cta_button( __( 'Parlons transaction', 'synergia' ), __( 'Discuss your deal', 'synergia' ), synergia_indexed_url( 'contact' ) ); ?>
         </div>
     </div>
 </section>

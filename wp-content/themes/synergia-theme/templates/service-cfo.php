@@ -60,7 +60,7 @@ get_header();
         <div class="callout">
             <p class="lang-fr">Transformez votre direction financière pour en faire un partenaire stratégique.</p>
             <p class="lang-en">Transform your finance team into a strategic partner.</p>
-            <?php synergia_cta_button( __( 'Démarrons votre transformation', 'synergia' ), __( 'Start your transformation', 'synergia' ), home_url( '/contact' ) ); ?>
+            <?php synergia_cta_button( __( 'Démarrons votre transformation', 'synergia' ), __( 'Start your transformation', 'synergia' ), synergia_indexed_url( 'contact' ) ); ?>
         </div>
     </div>
 </section>
