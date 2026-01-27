@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CapView - Al Mada</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root {
+            --gold: #C4A962;
+            --gold-light: #D4BC7C;
+            --gold-dark: #9A8542;
+            --green: #1A4D3E;
+            --green-dark: #0E3028;
+            --bg: #F5F7FA;
+            --surface: #FFFFFF;
+            --muted: #EDF0F5;
+            --border: #D0D6E0;
+            --text: #1A1F26;
+            --text2: #5A6370;
+            --text3: #9AA0AC;
+            --line: #A0AAB8;
+            --sh-bg: #EDECF8;
+            --sh-border: #7A6FB8;
+            --sh-text: #4A4090;
+            --sub-bg: #E6F4ED;
+            --sub-border: #3A9468;
+            --sub-text: #1E6546;
+        }
+        [data-theme="dark"] {
+            --bg: #0E1218;
+            --surface: #161C24;
+            --muted: #1C242E;
+            --border: #2A3440;
+            --text: #E6EAF0;
+            --text2: #94A0B0;
+            --text3: #5A6678;
+            --line: #4A5568;
+            --sh-bg: #26224A;
+            --sh-border: #9888E0;
+            --sh-text: #C0B6F0;
+            --sub-bg: #122E24;
+            --sub-border: #48C088;
+            --sub-text: #8EDDB8;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .page { display: none; min-height: 100vh; }
+        .page.active { display: flex; }
+
+        /* LOGIN */
+        #loginPage { align-items: center; justify-content: center; background: linear-gradient(135deg, var(--green-dark), var(--green)); padding: 24px; }
+        .login-card { background: var(--surface); border-radius: 20px; padding: 40px 32px; width: min(420px, 92vw); text-align: center; box-shadow: 0 24px 64px rgba(0,0,0,0.3); }
+        .logo-box { background: #fff; border-radius: 10px; padding: 12px 20px; display: inline-block; margin-bottom: 8px; }
+        [data-theme="light"] .logo-box { background: transparent; }
+        .logo-box img { height: 42px; }
+        .login-sub { font-size: 11px; color: var(--text3); }
+        .login-title { font-size: 28px; font-weight: 800; color: var(--gold); margin: 8px 0 28px; }
+        .login-input { width: 100%; background: var(--muted); border: 2px solid var(--border); border-radius: 12px; padding: 14px; font-family: 'JetBrains Mono', monospace; font-size: 18px; color: var(--text); text-align: center; letter-spacing: 0.25em; margin-bottom: 14px; }
+        .login-input:focus { outline: none; border-color: var(--gold); }
+        .login-btn { width: 100%; background: var(--gold); border: none; border-radius: 12px; padding: 14px; font-family: inherit; font-size: 15px; font-weight: 700; color: var(--green-dark); cursor: pointer; transition: background 0.2s; }
+        .login-btn:hover { background: var(--gold-light); }
+        .login-error { color: #E04040; font-size: 13px; margin-top: 12px; display: none; }
+        .login-footer { margin-top: 28px; font-size: 11px; color: var(--text3); }
+        .login-footer b { color: var(--gold); }
+
+        /* UPLOAD */
+        #uploadPage { align-items: center; justify-content: center; padding: 24px; }
+        .upload-card { background: var(--surface); border-radius: 20px; padding: 32px; width: min(520px, 92vw); text-align: center; box-shadow: 0 12px 40px rgba(0,0,0,0.08); }
+        .upload-title { font-size: 26px; font-weight: 800; color: var(--gold); margin: 8px 0 28px; }
+        .dropzone { border: 2px dashed var(--border); border-radius: 16px; padding: 44px 28px; cursor: pointer; transition: all 0.2s; }
+        .dropzone:hover, .dropzone.active { border-color: var(--gold); background: var(--muted); }
+        .dropzone-icon { width: 60px; height: 60px; margin: 0 auto 18px; background: linear-gradient(135deg, var(--gold), var(--green)); border-radius: 16px; display: flex; align-items: center; justify-content: center; }
+        .dropzone-icon svg { width: 28px; height: 28px; stroke: #fff; }
+        .dropzone h2 { font-size: 17px; margin-bottom: 8px; }
+        .dropzone p { font-size: 14px; color: var(--text2); margin-bottom: 14px; }
+        .file-types { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--gold-dark); background: var(--muted); padding: 6px 14px; border-radius: 6px; }
+        #fileInput { display: none; }
+        .upload-footer { margin-top: 28px; font-size: 10px; color: var(--text3); }
+        .upload-footer b { color: var(--gold); }
+
+        .theme-float { position: fixed; top: 16px; right: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; cursor: pointer; z-index: 100; }
+        .theme-float svg { width: 18px; height: 18px; stroke: var(--text2); display: block; }
+        .theme-float .sun { display: none; }
+        [data-theme="dark"] .theme-float .sun { display: block; }
+        [data-theme="dark"] .theme-float .moon { display: none; }
+
+        /* APP */
+        #appPage { flex-direction: column; height: 100vh; }
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+            flex-shrink: 0;
+        }
+        .header-left { display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+        .brand { display: flex; align-items: center; gap: 10px; }
+        .brand-logo { background: #fff; border-radius: 6px; padding: 4px 8px; }
+        [data-theme="light"] .brand-logo { background: transparent; }
+        .brand-logo img { height: 24px; display: block; }
+        .brand-name { font-size: 16px; font-weight: 800; color: var(--gold); }
+        .breadcrumb { display: flex; flex-wrap: wrap; gap: 6px; font-size: 13px; }
+        .bc-item { color: var(--text3); cursor: pointer; padding: 3px 8px; border-radius: 4px; transition: all 0.15s; }
+        .bc-item:hover { color: var(--text); background: var(--muted); }
+        .bc-item.current { color: var(--gold); font-weight: 700; }
+        .bc-sep { color: var(--text3); }
+        .header-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+        .search-box { position: relative; }
+        .search-box input { background: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px 10px 36px; font-size: 14px; color: var(--text); width: 180px; transition: all 0.2s; }
+        .search-box input:focus { outline: none; border-color: var(--gold); width: 240px; }
+        .search-box svg { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--text3); }
+        .search-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; margin-top: 6px; max-height: 220px; overflow-y: auto; display: none; z-index: 200; box-shadow: 0 12px 32px rgba(0,0,0,0.15); }
+        .search-list.show { display: block; }
+        .search-item { padding: 12px 14px; font-size: 13px; cursor: pointer; border-bottom: 1px solid var(--border); }
+        .search-item:last-child { border-bottom: none; }
+        .search-item:hover { background: var(--muted); }
+        .btn { background: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--text); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.15s; }
+        .btn:hover { border-color: var(--gold); }
+        .btn svg { width: 16px; height: 16px; }
+        .btn-gold { background: var(--gold); border-color: var(--gold-dark); color: var(--green-dark); }
+        .btn-gold:hover { background: var(--gold-light); }
+        .icon-btn { background: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 10px; cursor: pointer; }
+        .icon-btn:hover { border-color: var(--gold); }
+        .icon-btn svg { width: 18px; height: 18px; stroke: var(--text2); display: block; }
+        .icon-btn .sun { display: none; }
+        [data-theme="dark"] .icon-btn .sun { display: block; }
+        [data-theme="dark"] .icon-btn .moon { display: none; }
+
+        /* MAIN */
+        .main { flex: 1; display: flex; overflow: hidden; position: relative; }
+        .canvas-wrap { flex: 1; overflow: auto; cursor: grab; background: radial-gradient(circle at top, rgba(196,169,98,0.06), transparent 45%); }
+        .canvas-wrap:active { cursor: grabbing; }
+        .canvas { min-width: 100%; min-height: 100%; padding: 40px; display: flex; justify-content: center; align-items: flex-start; }
+
+        .center-hint {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.45);
+            color: #fff;
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 999px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .center-hint.show { opacity: 1; }
+
+        /* ORGCHART */
+        .orgchart { display: inline-flex; flex-direction: column; align-items: center; }
+
+        /* === NODE === */
+        .node-box {
+            width: 150px;
+            min-height: 50px;
+            background: var(--surface);
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .node-box:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.1); }
+        .node-name { font-size: 11px; font-weight: 600; line-height: 1.35; word-break: break-word; }
+
+        .node-box.root { width: 170px; min-height: 58px; background: linear-gradient(135deg, var(--gold), var(--gold-light)); border-color: var(--gold-dark); }
+        .node-box.root .node-name { font-size: 15px; font-weight: 800; color: var(--green-dark); }
+
+        .node-box.parent { background: var(--sh-bg); border-color: var(--sh-border); }
+        .node-box.parent .node-name { color: var(--sh-text); }
+
+        .node-box.child { background: var(--sub-bg); border-color: var(--sub-border); }
+        .node-box.child .node-name { color: var(--sub-text); }
+
+        /* === CONNECTORS === */
+        .vline { width: 2px; background: var(--line); }
+        .hline { height: 2px; background: var(--line); }
+
+        .pct-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            color: var(--gold-dark);
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 3px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }
+        [data-theme="dark"] .pct-badge { background: var(--muted); color: var(--gold-light); }
+
+        /* === STRUCTURE === */
+        .shareholders-section { display: flex; flex-direction: column; align-items: center; }
+        .sh-row { display: flex; justify-content: center; align-items: flex-end; flex-wrap: wrap; gap: 16px; }
+        .sh-unit { display: flex; flex-direction: column; align-items: center; margin: 0 10px; }
+        .sh-connector { display: flex; flex-direction: column; align-items: center; }
+
+        .merge-bar { display: flex; flex-direction: column; align-items: center; }
+
+        .children-section { display: flex; flex-direction: column; align-items: center; }
+        .children-row { display: flex; justify-content: center; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+        .child-unit { display: flex; flex-direction: column; align-items: center; margin: 0 10px; }
+        .child-connector { display: flex; flex-direction: column; align-items: center; }
+
+        /* Vertical layout */
+        .children-vertical { display: flex; flex-direction: column; align-items: flex-start; }
+        .child-v-row { display: flex; align-items: center; margin: 5px 0; }
+        .child-v-hline { width: 20px; height: 2px; background: var(--line); }
+        .child-v-node { width: 140px; min-height: 44px; background: var(--sub-bg); border: 2px solid var(--sub-border); border-radius: 8px; padding: 10px 8px; display: flex; align-items: center; justify-content: center; text-align: center; cursor: pointer; transition: all 0.15s; }
+        .child-v-node:hover { border-color: var(--gold); }
+        .child-v-node .node-name { font-size: 10px; font-weight: 600; color: var(--sub-text); }
+        .child-v-pct { font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 600; color: var(--gold-dark); margin: 0 8px; white-space: nowrap; }
+        [data-theme="dark"] .child-v-pct { color: var(--gold-light); }
+        .vline-master { width: 2px; background: var(--line); }
+
+        /* SIDEBAR */
+        .sidebar { width: 320px; background: var(--surface); border-left: 1px solid var(--border); display: flex; flex-direction: column; flex-shrink: 0; transition: margin-right 0.25s, transform 0.25s; position: relative; z-index: 20; }
+        .sidebar.hidden { margin-right: -320px; }
+        .sb-toggle { position: fixed; right: 320px; top: 50%; transform: translateY(-50%); background: var(--surface); border: 1px solid var(--border); border-right: none; border-radius: 8px 0 0 8px; padding: 12px 6px; cursor: pointer; z-index: 50; transition: right 0.25s; }
+        .sidebar.hidden + .sb-toggle { right: 0; }
+        .sb-toggle svg { width: 16px; height: 16px; stroke: var(--text2); transition: transform 0.25s; }
+        .sidebar.hidden + .sb-toggle svg { transform: rotate(180deg); }
+        .sb-head { padding: 18px; border-bottom: 1px solid var(--border); background: var(--muted); }
+        .sb-head h2 { font-size: 15px; font-weight: 700; line-height: 1.35; }
+        .sb-sector { display: inline-block; font-size: 9px; font-weight: 700; text-transform: uppercase; color: var(--gold-dark); background: rgba(196,169,98,0.18); padding: 4px 10px; border-radius: 4px; margin-top: 10px; }
+        .sb-body { flex: 1; overflow-y: auto; padding: 18px; }
+        .info-sec { margin-bottom: 18px; }
+        .info-sec h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text3); margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .info-card { background: var(--muted); border-radius: 8px; padding: 12px; }
+        .info-row { display: flex; justify-content: space-between; font-size: 13px; padding: 5px 0; }
+        .info-row .lbl { color: var(--text2); }
+        .info-row .val { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 12px; }
+        .entity-list { list-style: none; max-height: 200px; overflow-y: auto; }
+        .entity-item { display: flex; justify-content: space-between; padding: 10px 12px; background: var(--muted); border-radius: 6px; margin-bottom: 5px; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; }
+        .entity-item:hover { border-color: var(--gold); }
+        .entity-item .name { font-size: 12px; font-weight: 500; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .entity-item .pct { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 600; color: var(--gold); }
+
+        /* ZOOM */
+        .zoom-ctrl { position: fixed; bottom: 20px; left: 20px; display: flex; gap: 6px; z-index: 50; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 6px; box-shadow: 0 12px 24px rgba(0,0,0,0.08); }
+        .zoom-btn { width: 36px; height: 36px; background: var(--muted); border: 1px solid var(--border); border-radius: 8px; font-size: 18px; font-weight: 600; color: var(--text); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .zoom-btn:hover { background: var(--gold); color: var(--green-dark); border-color: var(--gold); }
+
+        /* MODAL */
+        .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 500; padding: 24px; }
+        .modal-bg.show { display: flex; }
+        .modal { background: var(--surface); border-radius: 14px; padding: 32px; width: min(420px, 92vw); text-align: center; }
+        .modal h3 { font-size: 18px; margin-bottom: 24px; }
+        .modal-btns { display: flex; gap: 14px; flex-wrap: wrap; }
+        .modal-btn { flex: 1; padding: 20px; border-radius: 10px; border: 2px solid var(--border); background: var(--muted); cursor: pointer; transition: all 0.15s; }
+        .modal-btn:hover { border-color: var(--gold); }
+        .modal-btn svg { width: 32px; height: 32px; stroke: var(--gold); margin-bottom: 10px; }
+        .modal-btn span { display: block; font-weight: 700; font-size: 15px; }
+        .modal-cancel { margin-top: 24px; background: none; border: none; color: var(--text3); font-size: 14px; cursor: pointer; }
+
+        /* LOADING */
+        .loading { position: fixed; inset: 0; background: rgba(14,18,24,0.95); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .loading.show { display: flex; }
+        .spinner { width: 48px; height: 48px; border: 3px solid var(--border); border-top-color: var(--gold); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading p { margin-top: 18px; color: var(--text2); font-size: 14px; }
+
+        /* EXPORT */
+        #exportBox { position: fixed; left: -9999px; top: 0; background: #fff; }
+        .export-page { width: 1122px; height: 793px; background: #fff; display: flex; flex-direction: column; padding: 0; }
+        .export-head { text-align: center; padding: 24px 40px 16px; border-bottom: 3px solid #C4A962; background: #fff; }
+        .export-head img { height: 36px; margin-bottom: 10px; }
+        .export-head h1 { font-size: 22px; color: #1A4D3E; margin: 0; font-weight: 700; }
+        .export-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 40px; overflow: hidden; background: #fff; }
+        .export-foot { text-align: center; font-size: 11px; color: #888; padding: 14px 40px; border-top: 1px solid #ddd; background: #fff; }
+
+        @media (max-width: 1100px) {
+            .header-right { width: 100%; justify-content: flex-start; }
+            .search-box input { width: 100%; min-width: 220px; }
+        }
+
+        @media (max-width: 900px) {
+            .sidebar {
+                position: fixed;
+                right: 0;
+                top: 0;
+                bottom: 0;
+                margin-right: 0;
+                transform: translateX(100%);
+                width: min(320px, 86vw);
+                box-shadow: -12px 0 24px rgba(0,0,0,0.18);
+            }
+            .sidebar.open { transform: translateX(0); }
+            .sb-toggle {
+                right: 16px;
+                top: auto;
+                bottom: 100px;
+                border-radius: 12px;
+                border-right: 1px solid var(--border);
+            }
+            .sidebar.hidden + .sb-toggle { right: 16px; }
+            .sb-toggle svg { transform: rotate(0deg); }
+            .sidebar.open + .sb-toggle svg { transform: rotate(180deg); }
+        }
+
+        @media (max-width: 600px) {
+            .brand-name { display: none; }
+            .btn span { display: none; }
+            .header { padding: 12px 14px; }
+            .zoom-ctrl { left: 10px; bottom: 10px; }
+            .search-box input { width: 100%; }
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <!-- LOGIN -->
+    <div class="page active" id="loginPage">
+        <div class="login-card">
+            <div class="logo-box"><img src="https://www.almada.ma/_next/image?url=https%3A%2F%2Fwww.almada.ma%2Fsites%2Fdefault%2Ffiles%2F2024-05%2Flogo_colore.png&w=640&q=80" alt="Al Mada"></div>
+            <div class="login-sub">Direction Finances et Patrimoines</div>
+            <div class="login-title">CapView</div>
+            <input type="password" class="login-input" id="pwdInput" placeholder="••••" autocomplete="off">
+            <button class="login-btn" id="loginBtn">Accéder</button>
+            <p class="login-error" id="loginErr">Mot de passe incorrect</p>
+            <div class="login-footer">Made by <b>SEA</b> • Édition 2025</div>
+        </div>
+    </div>
+
+    <!-- UPLOAD -->
+    <div class="page" id="uploadPage">
+        <button class="theme-float" id="theme1">
+            <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+            <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+        <div class="upload-card">
+            <div class="logo-box"><img src="https://www.almada.ma/_next/image?url=https%3A%2F%2Fwww.almada.ma%2Fsites%2Fdefault%2Ffiles%2F2024-05%2Flogo_colore.png&w=640&q=80" alt="Al Mada"></div>
+            <div class="login-sub">Direction Finances et Patrimoines</div>
+            <div class="upload-title">CapView</div>
+            <div class="dropzone" id="dropzone">
+                <div class="dropzone-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg></div>
+                <h2>Importer le fichier</h2>
+                <p>Glissez-déposez ou cliquez</p>
+                <span class="file-types">.xls • .xlsx</span>
+                <input type="file" id="fileInput" accept=".xls,.xlsx">
+            </div>
+            <div class="upload-footer">Made by <b>SEA</b> • Édition 2025</div>
+        </div>
+    </div>
+
+    <!-- APP -->
+    <div class="page" id="appPage">
+        <header class="header">
+            <div class="header-left">
+                <div class="brand">
+                    <div class="brand-logo"><img src="https://www.almada.ma/_next/image?url=https%3A%2F%2Fwww.almada.ma%2Fsites%2Fdefault%2Ffiles%2F2024-05%2Flogo_colore.png&w=640&q=80" alt=""></div>
+                    <span class="brand-name">CapView</span>
+                </div>
+                <nav class="breadcrumb" id="breadcrumb"></nav>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                    <input type="text" id="searchInput" placeholder="Rechercher...">
+                    <div class="search-list" id="searchList"></div>
+                </div>
+                <button class="btn" id="homeBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg><span>Racine</span></button>
+                <button class="btn" id="centerBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2"/></svg><span>Centrer</span></button>
+                <button class="btn btn-gold" id="exportBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg><span>Exporter</span></button>
+                <button class="btn" id="newBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg><span>Nouveau</span></button>
+                <button class="icon-btn" id="theme2">
+                    <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                    <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+                </button>
+            </div>
+        </header>
+        <main class="main">
+            <div class="canvas-wrap" id="canvasWrap">
+                <div class="canvas" id="canvas"></div>
+                <div class="center-hint" id="centerHint">Vue recentrée</div>
+            </div>
+            <aside class="sidebar hidden" id="sidebar">
+                <div class="sb-head">
+                    <h2 id="sbTitle">—</h2>
+                    <div class="sb-sector" id="sbSector" style="display:none"></div>
+                </div>
+                <div class="sb-body" id="sbBody"><p style="color:var(--text3);font-size:13px">Sélectionnez une entité</p></div>
+            </aside>
+            <button class="sb-toggle" id="sbToggle"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg></button>
+        </main>
+        <div class="zoom-ctrl">
+            <button class="zoom-btn" id="zoomIn">+</button>
+            <button class="zoom-btn" id="zoomOut">−</button>
+            <button class="zoom-btn" id="zoomFit">⊡</button>
+        </div>
+    </div>
+
+    <!-- MODAL -->
+    <div class="modal-bg" id="modalBg">
+        <div class="modal">
+            <h3>Exporter</h3>
+            <div class="modal-btns">
+                <button class="modal-btn" id="expPNG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg><span>PNG</span></button>
+                <button class="modal-btn" id="expPDF"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><span>PDF</span></button>
+            </div>
+            <button class="modal-cancel" id="expCancel">Annuler</button>
+        </div>
+    </div>
+
+    <!-- LOADING -->
+    <div class="loading" id="loading"><div style="text-align:center"><div class="spinner"></div><p>Chargement...</p></div></div>
+
+    <!-- EXPORT -->
+    <div id="exportBox">
+        <div class="export-page" id="exportPage">
+            <div class="export-head">
+                <img src="https://www.almada.ma/_next/image?url=https%3A%2F%2Fwww.almada.ma%2Fsites%2Fdefault%2Ffiles%2F2024-05%2Flogo_colore.png&w=640&q=80" alt="">
+                <h1 id="expTitle"></h1>
+            </div>
+            <div class="export-body" id="expBody"></div>
+            <div class="export-foot">Document interne — Al Mada — Direction Finances et Patrimoines — <span id="expDate"></span></div>
+        </div>
+    </div>
+
+    <script>
+    (function(){
+        'use strict';
+
+        const PWD = '2025', ROOT = 'AL MADA', MAX_H = 6;
+
+        const SECTORS = {
+            'ACTIVITES FINANCIERES': 'ACTIVITÉS FINANCIÈRES',
+            'ACTIVITÉS FINANCIÈRES': 'ACTIVITÉS FINANCIÈRES',
+            'PARTICIPATIONS INDUSTRIELLES': 'ACTIVITÉS INDUSTRIELLES',
+            'NOUVELLES TECHNOLOGIES': 'NOUVELLES TECHNOLOGIES - MÉDIAS',
+            'MINES ET MATERIAUX': 'MINES ET MATÉRIAUX DE CONSTRUCTION',
+            'AGRO ALIMENTAIRE': 'AGRO ALIMENTAIRE',
+            'TOURISME': 'TOURISME, AMÉNAGEMENT & HÔTELLERIE',
+            'DISTRIBUTION': 'DISTRIBUTION',
+            'AUTOMOBILE': 'AUTOMOBILE',
+            'GRANDE DISTRIBUTION': 'GRANDE DISTRIBUTION',
+            'ENVIRONNEMENT': 'ENVIRONNEMENT, ÉNERGIE & SERVICES',
+            'HOLDING': 'HOLDING',
+            'TRANSPORT': 'TRANSPORT',
+            'AUTRES': 'AUTRES'
+        };
+
+        const mapSector = s => { if (!s) return 'N/A'; const u = s.toUpperCase(); for (const [k, v] of Object.entries(SECTORS)) if (u.includes(k)) return v; return 'N/A'; };
+
+        let DATA = { entities: new Map(), rels: [] };
+        let focus = null, history = [], zoom = 1, isPanning = false, panX, panY, scrollX, scrollY;
+
+        const $ = id => document.getElementById(id);
+        const $$ = s => document.querySelectorAll(s);
+        const N = s => s ? s.toString().trim().replace(/\s+/g, ' ').toUpperCase() : '';
+        const clean = s => s ? s.toString().trim().replace(/\s+/g, ' ').replace(/\(Parts\)/gi, '').replace(/\(Société en cours de liquidation\)/gi, '⊘') : '';
+        const fmtN = n => n != null ? n.toLocaleString('fr-FR') : '—';
+        const fmtP = p => (p != null && !isNaN(p) && p > 0) ? p.toFixed(2) + '%' : null;
+
+        function parse(wb) {
+            DATA = { entities: new Map(), rels: [] };
+            wb.SheetNames.forEach(n => { const s = wb.Sheets[n]; if (s) parseSheet(s); });
+        }
+
+        function parseSheet(sh) {
+            const rng = XLSX.utils.decode_range(sh['!ref'] || 'A1:D1');
+            let cur = null, sec = null;
+            for (let r = rng.s.r; r <= rng.e.r; r++) {
+                const cA = sh[XLSX.utils.encode_cell({r,c:0})], cB = sh[XLSX.utils.encode_cell({r,c:1})], cC = sh[XLSX.utils.encode_cell({r,c:2})], cD = sh[XLSX.utils.encode_cell({r,c:3})];
+                const vA = cA ? String(cA.v||'').trim() : '';
+                if (!vA || /^(SOCIETES|NOMBRE DE|TITRES CAPITAL|TITRES$|TAUX DE|CONTRÔLE)/i.test(vA)) continue;
+                const hasB = cB && cB.v != null && cB.v !== '', hasC = cC && cC.v != null && cC.v !== '', hasD = cD && cD.v != null && cD.v !== '';
+                if (!hasB && !hasC && !hasD) { if (/^(ACTIVIT|PARTICIPATIONS|NOUVELLES|MINES|AGRO|TOURISME|DISTRIBUTION|ENVIRONNEMENT|HOLDING|AUTOMOBILE|TRANSPORT|AUTRES|GRANDE)/i.test(vA) || vA.length < 60) { sec = vA; cur = null; continue; } }
+                let cap = null, tit = null, pct = null;
+                if (hasB) { const p = parseFloat(String(cB.v).replace(/\s/g,'').replace(',','.')); if (!isNaN(p) && p > 0) cap = p; }
+                if (hasC) { const p = parseFloat(String(cC.v).replace(/\s/g,'').replace(',','.')); if (!isNaN(p)) tit = p; }
+                if (hasD) { const raw = String(cD.v).replace(',','.').replace('%','').trim(), p = parseFloat(raw); if (!isNaN(p)) { pct = p <= 1 && p > 0 ? p*100 : p; if (pct < 0 || pct > 100) pct = null; } }
+                if (cap !== null) { const name = clean(vA), key = N(name); cur = { name, key, titres: cap, sector: mapSector(sec) }; if (!DATA.entities.has(key)) DATA.entities.set(key, cur); }
+                else if (cur && (tit !== null || pct !== null)) { const shName = clean(vA), shKey = N(shName); DATA.rels.push({ from: shKey, fromName: shName, to: cur.key, toName: cur.name, pct }); if (!DATA.entities.has(shKey)) DATA.entities.set(shKey, { name: shName, key: shKey, titres: null, sector: 'N/A' }); }
+            }
+        }
+
+        const getSH = k => DATA.rels.filter(r => r.to === k && r.pct > 0);
+        const getSub = k => DATA.rels.filter(r => r.from === k && r.pct > 0);
+
+        function render() {
+            const cv = $('canvas');
+            if (!focus) focus = N(ROOT);
+            const ent = DATA.entities.get(focus);
+            if (!ent) { cv.innerHTML = '<p style="padding:2rem;color:var(--text3)">Entité non trouvée</p>'; return; }
+
+            const shs = getSH(focus), subs = getSub(focus);
+            const useV = subs.length > MAX_H;
+            let h = '<div class="orgchart" id="orgchart">';
+
+            // === SHAREHOLDERS ===
+            if (shs.length > 0) {
+                h += '<div class="shareholders-section">';
+                h += '<div class="sh-row">';
+                shs.forEach(sh => {
+                    const p = fmtP(sh.pct);
+                    h += '<div class="sh-unit">';
+                    h += '<div class="node-box parent" data-k="'+sh.from+'"><div class="node-name">'+sh.fromName+'</div></div>';
+                    h += '<div class="sh-connector">';
+                    h += '<div class="vline" style="height:18px"></div>';
+                    if (p) h += '<div class="pct-badge">'+p+'</div>';
+                    h += '<div class="vline" style="height:18px"></div>';
+                    h += '</div>';
+                    h += '</div>';
+                });
+                h += '</div>';
+                // Merge bar
+                const shW = Math.max(shs.length * 170, 120);
+                h += '<div class="merge-bar">';
+                h += '<div class="hline" style="width:'+shW+'px"></div>';
+                h += '<div class="vline" style="height:24px"></div>';
+                h += '</div>';
+                h += '</div>';
+            }
+
+            // === ROOT ===
+            h += '<div class="node-box root" data-k="'+focus+'"><div class="node-name">'+ent.name+'</div></div>';
+
+            // === CHILDREN ===
+            if (subs.length > 0) {
+                h += '<div class="children-section">';
+                h += '<div class="merge-bar">';
+                h += '<div class="vline" style="height:24px"></div>';
+
+                if (useV) {
+                    // Vertical layout
+                    const cols = Math.min(3, Math.ceil(subs.length / 12));
+                    const perCol = Math.ceil(subs.length / cols);
+                    h += '</div>'; // close merge-bar
+                    h += '<div style="display:flex;gap:30px;flex-wrap:wrap;justify-content:center">';
+                    for (let c = 0; c < cols; c++) {
+                        h += '<div class="children-vertical">';
+                        h += '<div class="vline-master" style="height:'+(Math.min(perCol, subs.length - c*perCol) * 54)+'px;position:absolute"></div>';
+                        h += '<div style="border-left:2px solid var(--line)">';
+                        for (let i = c*perCol; i < Math.min((c+1)*perCol, subs.length); i++) {
+                            const sub = subs[i], p = fmtP(sub.pct);
+                            h += '<div class="child-v-row">';
+                            h += '<div class="child-v-hline"></div>';
+                            if (p) h += '<div class="child-v-pct">'+p+'</div>';
+                            h += '<div class="child-v-node" data-k="'+sub.to+'"><div class="node-name">'+sub.toName+'</div></div>';
+                            h += '</div>';
+                        }
+                        h += '</div></div>';
+                    }
+                    h += '</div>';
+                } else {
+                    // Horizontal layout
+                    const subW = Math.max(subs.length * 170, 120);
+                    h += '<div class="hline" style="width:'+subW+'px"></div>';
+                    h += '</div>'; // close merge-bar
+                    h += '<div class="children-row">';
+                    subs.forEach(sub => {
+                        const p = fmtP(sub.pct);
+                        h += '<div class="child-unit">';
+                        h += '<div class="child-connector">';
+                        h += '<div class="vline" style="height:18px"></div>';
+                        if (p) h += '<div class="pct-badge">'+p+'</div>';
+                        h += '<div class="vline" style="height:18px"></div>';
+                        h += '</div>';
+                        h += '<div class="node-box child" data-k="'+sub.to+'"><div class="node-name">'+sub.toName+'</div></div>';
+                        h += '</div>';
+                    });
+                    h += '</div>';
+                }
+                h += '</div>';
+            }
+
+            h += '</div>';
+            cv.innerHTML = h;
+
+            $$('.node-box, .child-v-node').forEach(n => n.addEventListener('click', () => nav(n.dataset.k)));
+            updateSB(focus);
+        }
+
+        function nav(k) {
+            if (!DATA.entities.has(k)) return;
+            focus = k;
+            const i = history.indexOf(k);
+            history = i >= 0 ? history.slice(0, i+1) : [...history, k];
+            updateBC();
+            render();
+            centerCanvas();
+        }
+
+        function updateBC() {
+            $('breadcrumb').innerHTML = history.map((k,i) => {
+                const e = DATA.entities.get(k), n = e ? e.name : k, last = i === history.length-1;
+                return last ? '<span class="bc-item current">'+n+'</span>' : '<span class="bc-item" data-k="'+k+'">'+n+'</span><span class="bc-sep">›</span>';
+            }).join('');
+            $$('.bc-item[data-k]').forEach(b => b.addEventListener('click', () => nav(b.dataset.k)));
+        }
+
+        function updateSB(k) {
+            const e = DATA.entities.get(k);
+            if (!e) return;
+            $('sbTitle').textContent = e.name;
+            const sec = $('sbSector');
+            if (e.sector && e.sector !== 'N/A') { sec.textContent = e.sector; sec.style.display = 'inline-block'; } else sec.style.display = 'none';
+            const shs = getSH(k), subs = getSub(k);
+            let h = '<div class="info-sec"><h3>Informations</h3><div class="info-card"><div class="info-row"><span class="lbl">Nombre de titres</span><span class="val">'+fmtN(e.titres)+'</span></div><div class="info-row"><span class="lbl">Participations</span><span class="val">'+subs.length+'</span></div></div></div>';
+            if (shs.length) { h += '<div class="info-sec"><h3>Actionnaires ('+shs.length+')</h3><ul class="entity-list">'; shs.forEach(sh => h += '<li class="entity-item" data-k="'+sh.from+'"><span class="name">'+sh.fromName+'</span><span class="pct">'+(fmtP(sh.pct)||'—')+'</span></li>'); h += '</ul></div>'; }
+            if (subs.length) { h += '<div class="info-sec"><h3>Participations ('+subs.length+')</h3><ul class="entity-list">'; subs.slice(0,30).forEach(sub => h += '<li class="entity-item" data-k="'+sub.to+'"><span class="name">'+sub.toName+'</span><span class="pct">'+(fmtP(sub.pct)||'—')+'</span></li>'); if (subs.length > 30) h += '<li style="font-size:11px;color:var(--text3);padding:10px">+'+(subs.length-30)+' autres...</li>'; h += '</ul></div>'; }
+            $('sbBody').innerHTML = h;
+            $$('.entity-item[data-k]').forEach(el => el.addEventListener('click', () => nav(el.dataset.k)));
+        }
+
+        function initPan() {
+            const wrap = $('canvasWrap');
+            wrap.addEventListener('mousedown', e => { if (e.target.closest('.node-box, .child-v-node')) return; isPanning = true; panX = e.clientX; panY = e.clientY; scrollX = wrap.scrollLeft; scrollY = wrap.scrollTop; wrap.style.cursor = 'grabbing'; });
+            wrap.addEventListener('mousemove', e => { if (!isPanning) return; wrap.scrollLeft = scrollX - (e.clientX - panX); wrap.scrollTop = scrollY - (e.clientY - panY); });
+            wrap.addEventListener('mouseup', () => { isPanning = false; wrap.style.cursor = 'grab'; });
+            wrap.addEventListener('mouseleave', () => { isPanning = false; wrap.style.cursor = 'grab'; });
+        }
+
+        function centerCanvas() {
+            const wrap = $('canvasWrap');
+            const hint = $('centerHint');
+            setTimeout(() => {
+                wrap.scrollLeft = Math.max(0, (wrap.scrollWidth - wrap.clientWidth) / 2);
+                wrap.scrollTop = 0;
+                hint.classList.add('show');
+                setTimeout(() => hint.classList.remove('show'), 1200);
+            }, 60);
+        }
+
+        function search(q) {
+            const list = $('searchList');
+            if (!q || q.length < 2) { list.classList.remove('show'); return; }
+            const u = N(q), matches = [];
+            DATA.entities.forEach((e,k) => { if (e.name.toUpperCase().includes(u) || k.includes(u)) matches.push(e); });
+            if (!matches.length) { list.classList.remove('show'); return; }
+            list.innerHTML = matches.slice(0,10).map(m => '<div class="search-item" data-k="'+m.key+'">'+m.name+'</div>').join('');
+            list.classList.add('show');
+            $$('.search-item').forEach(it => it.addEventListener('click', () => { nav(it.dataset.k); list.classList.remove('show'); $('searchInput').value = ''; }));
+        }
+
+        function toggleTheme() { document.body.dataset.theme = document.body.dataset.theme === 'dark' ? 'light' : 'dark'; }
+        function setZoom(d) { zoom = Math.max(0.4, Math.min(2, zoom + d)); $('canvas').style.transform = 'scale('+zoom+')'; $('canvas').style.transformOrigin = 'top center'; }
+        function resetZoom() { zoom = 1; $('canvas').style.transform = 'scale(1)'; centerCanvas(); }
+
+        function prepareExport() {
+            const ent = DATA.entities.get(focus);
+            $('expTitle').textContent = (ent?.name || 'Export') + ' - Organigramme';
+            $('expDate').textContent = new Date().toLocaleDateString('fr-FR');
+
+            const org = $('orgchart');
+            const clone = org.cloneNode(true);
+
+            clone.querySelectorAll('.node-box').forEach(n => {
+                n.style.background = '#FFFFFF';
+                n.style.borderColor = '#D0D6E0';
+            });
+            clone.querySelectorAll('.node-box.root').forEach(n => {
+                n.style.background = 'linear-gradient(135deg, #C4A962, #D4BC7C)';
+                n.style.borderColor = '#9A8542';
+            });
+            clone.querySelectorAll('.node-box.parent').forEach(n => {
+                n.style.background = '#EDECF8';
+                n.style.borderColor = '#7A6FB8';
+            });
+            clone.querySelectorAll('.node-box.child, .child-v-node').forEach(n => {
+                n.style.background = '#E6F4ED';
+                n.style.borderColor = '#3A9468';
+            });
+            clone.querySelectorAll('.vline, .hline, [style*="border-left"]').forEach(n => {
+                n.style.background = '#A0AAB8';
+                if (n.style.borderLeft) n.style.borderLeftColor = '#A0AAB8';
+            });
+            clone.querySelectorAll('.pct-badge').forEach(n => {
+                n.style.background = '#FFFFFF';
+                n.style.borderColor = '#D0D6E0';
+                n.style.color = '#9A8542';
+            });
+
+            const body = $('expBody');
+            body.innerHTML = '';
+            body.appendChild(clone);
+
+            const box = $('exportBox');
+            box.style.left = '0';
+            box.style.position = 'absolute';
+
+            return { clone, box };
+        }
+
+        function finalizeExport(box) {
+            box.style.left = '-9999px';
+            box.style.position = 'fixed';
+        }
+
+        async function expPNG() {
+            $('loading').classList.add('show');
+            try {
+                const { clone, box } = prepareExport();
+                await new Promise(r => setTimeout(r, 150));
+                const orgW = clone.offsetWidth;
+                const orgH = clone.offsetHeight;
+                const maxW = 1000, maxH = 560;
+                const scale = Math.min(maxW / orgW, maxH / orgH, 1);
+                clone.style.transform = 'scale(' + scale + ')';
+                clone.style.transformOrigin = 'center center';
+
+                await new Promise(r => setTimeout(r, 150));
+                const page = $('exportPage');
+                const canvas = await html2canvas(page, { backgroundColor: '#FFFFFF', scale: 2.5, useCORS: true, logging: false });
+
+                finalizeExport(box);
+
+                const link = document.createElement('a');
+                link.download = (DATA.entities.get(focus)?.name || 'CapView') + '_Organigramme.png';
+                link.href = canvas.toDataURL('image/png', 1.0);
+                link.click();
+            } catch (e) { alert('Erreur export PNG'); console.error(e); }
+            $('loading').classList.remove('show');
+            $('modalBg').classList.remove('show');
+        }
+
+        async function expPDF() {
+            $('loading').classList.add('show');
+            try {
+                const { clone, box } = prepareExport();
+                await new Promise(r => setTimeout(r, 150));
+
+                const orgW = clone.offsetWidth;
+                const orgH = clone.offsetHeight;
+                const maxW = 1000, maxH = 560;
+                const scale = Math.min(maxW / orgW, maxH / orgH, 1);
+
+                clone.style.transform = 'scale(' + scale + ')';
+                clone.style.transformOrigin = 'center center';
+
+                await new Promise(r => setTimeout(r, 150));
+
+                const page = $('exportPage');
+                const canvas = await html2canvas(page, { backgroundColor: '#FFFFFF', scale: 2, useCORS: true, logging: false });
+
+                finalizeExport(box);
+
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                pdf.addImage(imgData, 'JPEG', 0, 0, 297, 210);
+                pdf.save((DATA.entities.get(focus)?.name || 'CapView') + '_Organigramme.pdf');
+            } catch (e) { alert('Erreur export PDF'); console.error(e); }
+            $('loading').classList.remove('show');
+            $('modalBg').classList.remove('show');
+        }
+
+        function handleFile(f) {
+            if (!f) return;
+            $('loading').classList.add('show');
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const wb = XLSX.read(data, { type: 'array' });
+                    parse(wb);
+                    showPage('appPage');
+                    focus = N(ROOT);
+                    history = [focus];
+                    updateBC();
+                    render();
+                    setTimeout(centerCanvas, 200);
+                } catch (err) { alert('Erreur: ' + err.message); console.error(err); }
+                $('loading').classList.remove('show');
+            };
+            reader.readAsArrayBuffer(f);
+        }
+
+        function showPage(id) {
+            $$('.page').forEach(p => p.classList.remove('active'));
+            $(id).classList.add('active');
+        }
+
+        function resetApp() {
+            DATA = { entities: new Map(), rels: [] };
+            focus = null;
+            history = [];
+            zoom = 1;
+            $('canvas').style.transform = 'scale(1)';
+            $('canvas').innerHTML = '';
+            $('breadcrumb').innerHTML = '';
+            $('sbTitle').textContent = '—';
+            $('sbSector').style.display = 'none';
+            $('sbBody').innerHTML = '<p style="color:var(--text3);font-size:13px">Sélectionnez une entité</p>';
+            $('fileInput').value = '';
+            showPage('uploadPage');
+        }
+
+        function toggleSidebar() {
+            const sidebar = $('sidebar');
+            if (window.innerWidth <= 900) {
+                sidebar.classList.toggle('open');
+            } else {
+                sidebar.classList.toggle('hidden');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Login
+            $('loginBtn').addEventListener('click', () => { if ($('pwdInput').value === PWD) showPage('uploadPage'); else { $('loginErr').style.display = 'block'; $('pwdInput').value = ''; } });
+            $('pwdInput').addEventListener('keypress', e => { if (e.key === 'Enter') $('loginBtn').click(); });
+
+            // Upload
+            const dz = $('dropzone'), fi = $('fileInput');
+            dz.addEventListener('click', () => fi.click());
+            dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('active'); });
+            dz.addEventListener('dragleave', () => dz.classList.remove('active'));
+            dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('active'); handleFile(e.dataTransfer.files[0]); });
+            fi.addEventListener('change', e => handleFile(e.target.files[0]));
+
+            // Header
+            $('homeBtn').addEventListener('click', () => { focus = N(ROOT); history = [focus]; updateBC(); render(); resetZoom(); });
+            $('centerBtn').addEventListener('click', centerCanvas);
+            $('newBtn').addEventListener('click', resetApp);
+
+            // Search
+            $('searchInput').addEventListener('input', e => search(e.target.value));
+            $('searchInput').addEventListener('focus', e => search(e.target.value));
+            document.addEventListener('click', e => { if (!e.target.closest('.search-box')) $('searchList').classList.remove('show'); });
+
+            // Export
+            $('exportBtn').addEventListener('click', () => $('modalBg').classList.add('show'));
+            $('expPNG').addEventListener('click', expPNG);
+            $('expPDF').addEventListener('click', expPDF);
+            $('expCancel').addEventListener('click', () => $('modalBg').classList.remove('show'));
+
+            // Sidebar
+            $('sbToggle').addEventListener('click', toggleSidebar);
+            window.addEventListener('resize', () => {
+                const sidebar = $('sidebar');
+                if (window.innerWidth > 900) sidebar.classList.remove('open');
+            });
+
+            // Zoom
+            $('zoomIn').addEventListener('click', () => setZoom(0.15));
+            $('zoomOut').addEventListener('click', () => setZoom(-0.15));
+            $('zoomFit').addEventListener('click', resetZoom);
+
+            // Theme
+            $('theme1').addEventListener('click', toggleTheme);
+            $('theme2').addEventListener('click', toggleTheme);
+
+            initPan();
+        });
+    })();
+    </script>
+</body>
+</html>
